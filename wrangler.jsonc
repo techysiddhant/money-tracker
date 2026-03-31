@@ -35,7 +35,15 @@
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true
+	"upload_source_maps": true,
+	"d1_databases": [
+		{
+			"binding": "test_d1_nextjs",
+			"database_name": "test-d1-nextjs",
+			"database_id": "ec14f840-7ab5-40ee-8641-d5804c721df9",
+			"remote": true
+		}
+	]
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
