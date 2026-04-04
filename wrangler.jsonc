@@ -38,12 +38,12 @@
 	"upload_source_maps": true,
 	"d1_databases": [
 		{
-			"binding": "test_d1_nextjs",
+			"binding": "DB",
 			"database_name": "test-d1-nextjs",
 			"database_id": "ec14f840-7ab5-40ee-8641-d5804c721df9",
-			"remote": true
+			"migrations_dir": "drizzle"
 		}
-	]
+	],
 	/**
 	 * Smart Placement
 	 * https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
@@ -61,5 +61,7 @@
 	 * Note: Use secrets to store sensitive data.
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
-	// "vars": {  "MY_VARIABLE": "production_value" }
+	"vars": {
+		"BETTER_AUTH_URL": "https://cloudflare-nextjs.techysiddhant.workers.dev"
+	}
 }
