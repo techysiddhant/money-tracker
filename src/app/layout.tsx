@@ -7,6 +7,8 @@ import { QueryProvider } from "@/lib/query-client";
 import { Toaster } from "react-hot-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+import { InstallPrompt } from "@/components/install-prompt";
+
 const geistHeading = Geist({ subsets: ["latin"], variable: "--font-heading" });
 const figtree = Figtree({ subsets: ["latin"], variable: "--font-sans" });
 
@@ -49,6 +51,7 @@ export default function RootLayout({
           <QueryProvider>
             <TooltipProvider>
               {children}
+              <InstallPrompt />
               <Toaster position="top-right" />
             </TooltipProvider>
           </QueryProvider>
