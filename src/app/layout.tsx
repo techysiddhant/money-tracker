@@ -24,6 +24,7 @@ export const metadata: Metadata = {
   title: "Money Tracker",
   description:
     "Track expenses, manage payment methods, split costs with members, and monitor spending across cycles.",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
