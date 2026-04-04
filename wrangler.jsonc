@@ -62,6 +62,6 @@
 	 * https://developers.cloudflare.com/workers/configuration/secrets/
 	 */
 	"vars": {
-		"BETTER_AUTH_URL": "https://cloudflare-nextjs.techysiddhant.workers.dev"
+		"BETTER_AUTH_URL": "https://money.thesiddhant.com"
 	}
 }
