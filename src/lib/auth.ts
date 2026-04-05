@@ -18,5 +18,18 @@ export function getAuth() {
     emailAndPassword: {
       enabled: true,
     },
+    databaseHooks: {
+      user: {
+        create: {
+          before: async (user) => {
+            const isProd = process.env.NODE_ENV === "production" || (env as any).ENVIRONMENT === "production";
+            if (isProd) {
+              throw new Error("Signup is disabled in production");
+            }
+            return { data: user };
+          },
+        },
+      },
+    },
   });
 }
