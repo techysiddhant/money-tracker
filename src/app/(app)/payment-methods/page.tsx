@@ -134,7 +134,7 @@ export default function PaymentMethodsPage() {
         onAction={openCreate}
       />
 
-      <Card>
+      <Card className="p-0">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-6 space-y-4">
@@ -302,8 +302,8 @@ export default function PaymentMethodsPage() {
               {isMutating
                 ? "Saving..."
                 : editing
-                ? "Update"
-                : "Create"}
+                  ? "Update"
+                  : "Create"}
             </Button>
           </DialogFooter>
         </DialogContent>

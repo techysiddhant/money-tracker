@@ -120,7 +120,7 @@ export default function MembersPage() {
         onAction={openCreate}
       />
 
-      <Card>
+      <Card className="p-0">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-6 space-y-4">

@@ -1,24 +1,48 @@
+"use client";
+
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Receipt, PieChart, Users, Wallet } from "lucide-react";
+import { ArrowRight, PieChart, Users, Wallet, Plus } from "lucide-react";
+import { useSession } from "@/lib/auth-client";
 
 export default function Home() {
+  const { data: session, isPending } = useSession();
+  const isLoggedIn = !isPending && !!session;
+
   return (
     <div className="flex flex-col min-h-screen">
-      <header className="px-6 lg:px-8 h-16 flex items-center border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="px-6 lg:px-8 h-16 flex items-center border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <Link className="flex items-center justify-center font-bold font-heading text-lg gap-2" href="/">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Receipt className="h-4 w-4" />
-          </div>
-          <span>Money Tracker</span>
+          <Image
+            src="/logo.png"
+            alt="TrackMint"
+            width={32}
+            height={32}
+            className="rounded-lg"
+          />
+          <span>TrackMint</span>
         </Link>
         <nav className="ml-auto flex items-center gap-4 sm:gap-6">
-          <Link className="text-sm font-medium hover:underline underline-offset-4" href="/auth/signin">
-            Sign In
-          </Link>
-          <Button asChild size="sm">
-            <Link href="/auth/signup">Sign Up</Link>
-          </Button>
+          {isLoggedIn ? (
+            <>
+              <span className="text-sm text-muted-foreground hidden sm:inline">
+                Hey, {session.user?.name || "there"}
+              </span>
+              <Button asChild size="sm">
+                <Link href="/dashboard">Dashboard</Link>
+              </Button>
+            </>
+          ) : (
+            <>
+              <Link className="text-sm font-medium hover:underline underline-offset-4" href="/auth/signin">
+                Sign In
+              </Link>
+              <Button asChild size="sm">
+                <Link href="/auth/signup">Sign Up</Link>
+              </Button>
+            </>
+          )}
         </nav>
       </header>
       <main className="flex-1">
@@ -29,20 +53,37 @@ export default function Home() {
                 Take control of your <span className="text-primary">finances</span> today
               </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed">
-                Money Tracker makes it easy to monitor your spending, manage shared expenses, and hit your financial goals.
+                TrackMint makes it easy to monitor your spending, manage shared expenses, and hit your financial goals.
               </p>
             </div>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Button asChild size="lg" className="h-12 px-8 text-base">
-                <Link href="/auth/signup">
-                  Get Started <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="h-12 px-8 text-base">
-                <Link href="/dashboard">
-                  Go to Dashboard
-                </Link>
-              </Button>
+              {isLoggedIn ? (
+                <>
+                  <Button asChild size="lg" className="h-12 px-8 text-base">
+                    <Link href="/expenses/new">
+                      <Plus className="mr-2 h-4 w-4" /> Add Expense
+                    </Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline" className="h-12 px-8 text-base">
+                    <Link href="/dashboard">
+                      Go to Dashboard
+                    </Link>
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button asChild size="lg" className="h-12 px-8 text-base">
+                    <Link href="/auth/signup">
+                      Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button asChild size="lg" variant="outline" className="h-12 px-8 text-base">
+                    <Link href="/dashboard">
+                      Go to Dashboard
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </section>
@@ -76,7 +117,7 @@ export default function Home() {
       </main>
       <footer className="py-8 w-full border-t flex items-center justify-center bg-background px-4">
         <p className="text-sm text-muted-foreground text-center">
-          © {new Date().getFullYear()} Money Tracker. Built for personal finance management.
+          © {new Date().getFullYear()} TrackMint. Built for personal finance management.
         </p>
       </footer>
     </div>

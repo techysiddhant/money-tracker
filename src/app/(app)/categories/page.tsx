@@ -126,7 +126,7 @@ export default function CategoriesPage() {
         onAction={openCreate}
       />
 
-      <Card>
+      <Card className="p-0">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-6 space-y-4">
@@ -146,7 +146,7 @@ export default function CategoriesPage() {
             <>
               <div className="hidden md:block">
                 <Table>
-                  <TableHeader>
+                  <TableHeader >
                     <TableRow>
                       <TableHead className="w-[60px]">Icon</TableHead>
                       <TableHead>Name</TableHead>

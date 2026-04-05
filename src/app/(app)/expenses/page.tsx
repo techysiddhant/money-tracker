@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { Receipt, Trash2, Eye, Plus } from "lucide-react";
 import toast from "react-hot-toast";
@@ -8,6 +7,9 @@ import { useExpenses, useDeleteExpense } from "@/hooks/use-expenses";
 import { useCyclesList } from "@/hooks/use-cycles";
 import { useCategoriesList } from "@/hooks/use-categories";
 import { usePaymentMethodsList } from "@/hooks/use-payment-methods";
+import { useMembersList } from "@/hooks/use-members";
+import { useExpenseFiltersStore } from "@/stores/use-expense-filters-store";
+import { useExpenseFormStore } from "@/stores/use-expense-form-store";
 import { PageHeader } from "@/components/page-header";
 import { PaginationControls } from "@/components/pagination-controls";
 import { ConfirmDialog } from "@/components/confirm-dialog";
@@ -15,6 +17,8 @@ import { EmptyState } from "@/components/empty-state";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import {
   Table,
@@ -34,14 +38,8 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { useRouter } from "next/navigation";
 
 export default function ExpensesPage() {
-  const [page, setPage] = useState(1);
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [filters, setFilters] = useState<{
-    cycleId?: string;
-    categoryId?: string;
-    paymentMethodId?: string;
-  }>({});
+  const { filters, page, updateFilter, setPage } = useExpenseFiltersStore();
+  const { deleteOpen, deletingId, openDelete, closeDelete } = useExpenseFormStore();
 
   const query = useExpenses(page, 10, filters);
   const items = query.data?.data ?? [];
@@ -52,29 +50,17 @@ export default function ExpensesPage() {
   const { data: cyclesData } = useCyclesList();
   const { data: categoriesData } = useCategoriesList();
   const { data: pmData } = usePaymentMethodsList();
-
-  const openDelete = (id: string) => {
-    setDeletingId(id);
-    setDeleteOpen(true);
-  };
+  const { data: membersData } = useMembersList();
 
   const handleDelete = async () => {
     if (!deletingId) return;
     try {
       await deleteMutation.mutateAsync(deletingId);
       toast.success("Expense deleted");
-      setDeleteOpen(false);
+      closeDelete();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Something went wrong");
     }
-  };
-
-  const updateFilter = (key: string, value: string | undefined) => {
-    setPage(1);
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value === "all" ? undefined : value,
-    }));
   };
 
   return (
@@ -91,42 +77,87 @@ export default function ExpensesPage() {
         </Button>
       </PageHeader>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <Combobox
-          options={[
-            { label: "All Cycles", value: "all" },
-            ...(cyclesData?.data?.map((c) => ({ label: c.name, value: c.id })) || []),
-          ]}
-          value={filters.cycleId || "all"}
-          onChange={(v) => updateFilter("cycleId", v)}
-          placeholder="All Cycles"
-          className="w-full sm:w-[200px]"
-        />
+      {/* Filters */}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Combobox
+            options={[
+              { label: "All Cycles", value: "all" },
+              ...(cyclesData?.data?.map((c) => ({ label: c.name, value: c.id })) || []),
+            ]}
+            value={filters.cycleId || "all"}
+            onChange={(v) => updateFilter("cycleId", v)}
+            placeholder="All Cycles"
+            className="w-full sm:w-[200px]"
+          />
 
-        <Combobox
-          options={[
-            { label: "All Categories", value: "all" },
-            ...(categoriesData?.data?.map((c) => ({ label: `${c.icon ? c.icon + " " : ""}${c.name}`, value: c.id })) || []),
-          ]}
-          value={filters.categoryId || "all"}
-          onChange={(v) => updateFilter("categoryId", v)}
-          placeholder="All Categories"
-          className="w-full sm:w-[200px]"
-        />
+          <Combobox
+            options={[
+              { label: "All Categories", value: "all" },
+              ...(categoriesData?.data?.map((c) => ({ label: `${c.icon ? c.icon + " " : ""}${c.name}`, value: c.id })) || []),
+            ]}
+            value={filters.categoryId || "all"}
+            onChange={(v) => updateFilter("categoryId", v)}
+            placeholder="All Categories"
+            className="w-full sm:w-[200px]"
+          />
 
-        <Combobox
-          options={[
-            { label: "All Payment Methods", value: "all" },
-            ...(pmData?.data?.map((p) => ({ label: p.name, value: p.id })) || []),
-          ]}
-          value={filters.paymentMethodId || "all"}
-          onChange={(v) => updateFilter("paymentMethodId", v)}
-          placeholder="All Payment Methods"
-          className="w-full sm:w-[200px]"
-        />
+          <Combobox
+            options={[
+              { label: "All Payment Methods", value: "all" },
+              ...(pmData?.data?.map((p) => ({ label: p.name, value: p.id })) || []),
+            ]}
+            value={filters.paymentMethodId || "all"}
+            onChange={(v) => updateFilter("paymentMethodId", v)}
+            placeholder="All Payment Methods"
+            className="w-full sm:w-[200px]"
+          />
+
+          <Combobox
+            options={[
+              { label: "All Members", value: "all" },
+              ...(membersData?.data?.map((m) => ({ label: m.name, value: m.id })) || []),
+            ]}
+            value={filters.memberId || "all"}
+            onChange={(v) => updateFilter("memberId", v)}
+            placeholder="All Members"
+            className="w-full sm:w-[200px]"
+          />
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 items-end">
+          <div className="space-y-1 w-full sm:w-auto">
+            <Label className="text-xs text-muted-foreground">From</Label>
+            <Input
+              type="date"
+              value={filters.dateFrom || ""}
+              onChange={(e) => updateFilter("dateFrom", e.target.value || undefined)}
+              className="w-full sm:w-[180px]"
+            />
+          </div>
+          <div className="space-y-1 w-full sm:w-auto">
+            <Label className="text-xs text-muted-foreground">To</Label>
+            <Input
+              type="date"
+              value={filters.dateTo || ""}
+              onChange={(e) => updateFilter("dateTo", e.target.value || undefined)}
+              className="w-full sm:w-[180px]"
+            />
+          </div>
+          {Object.values(filters).some(Boolean) && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => useExpenseFiltersStore.getState().resetFilters()}
+              className="text-muted-foreground"
+            >
+              Clear filters
+            </Button>
+          )}
+        </div>
       </div>
 
-      <Card>
+      <Card className="p-0">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="p-6 space-y-4">
@@ -287,7 +318,7 @@ export default function ExpensesPage() {
 
       <ConfirmDialog
         open={deleteOpen}
-        onOpenChange={setDeleteOpen}
+        onOpenChange={(open) => !open && closeDelete()}
         title="Delete Expense"
         description="Are you sure you want to delete this expense? This will also remove all associated splits. This action cannot be undone."
         onConfirm={handleDelete}

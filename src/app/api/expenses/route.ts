@@ -15,7 +15,7 @@ import {
   paginatedResponse,
   apiResponse,
 } from "@/lib/api-utils";
-import { eq, and, count, desc } from "drizzle-orm";
+import { eq, and, count, desc, gte, lte, inArray } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export async function GET(request: NextRequest) {
@@ -27,14 +27,33 @@ export async function GET(request: NextRequest) {
   const cycleId = url.searchParams.get("cycleId");
   const categoryId = url.searchParams.get("categoryId");
   const paymentMethodId = url.searchParams.get("paymentMethodId");
+  const memberId = url.searchParams.get("memberId");
+  const dateFrom = url.searchParams.get("dateFrom");
+  const dateTo = url.searchParams.get("dateTo");
 
   const db = getDb();
+
+  // If filtering by memberId, find matching expense IDs first
+  let memberExpenseIds: string[] | null = null;
+  if (memberId) {
+    const memberSplits = await db
+      .select({ expenseId: expenseSplit.expenseId })
+      .from(expenseSplit)
+      .where(eq(expenseSplit.memberId, memberId));
+    memberExpenseIds = memberSplits.map((s) => s.expenseId);
+    if (memberExpenseIds.length === 0) {
+      return paginatedResponse([], 0, page, limit);
+    }
+  }
 
   const conditions = [eq(expense.userId, user.id)];
   if (cycleId) conditions.push(eq(expense.cycleId, cycleId));
   if (categoryId) conditions.push(eq(expense.categoryId, categoryId));
   if (paymentMethodId)
     conditions.push(eq(expense.paymentMethodId, paymentMethodId));
+  if (dateFrom) conditions.push(gte(expense.date, dateFrom));
+  if (dateTo) conditions.push(lte(expense.date, dateTo));
+  if (memberExpenseIds) conditions.push(inArray(expense.id, memberExpenseIds));
 
   const whereClause = and(...conditions);
 

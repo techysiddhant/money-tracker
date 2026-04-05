@@ -111,6 +111,26 @@ export const expenseSplit = sqliteTable("expense_split", {
 	createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
 
+export const memberPayment = sqliteTable("member_payment", {
+	id: text("id").primaryKey(),
+	userId: text("user_id").notNull().references(() => user.id),
+	cycleId: text("cycle_id").notNull().references(() => cycle.id),
+	memberId: text("member_id").notNull().references(() => member.id),
+	amount: real("amount").notNull(),
+	note: text("note"),
+	createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
+export const memberAdditionalCost = sqliteTable("member_additional_cost", {
+	id: text("id").primaryKey(),
+	userId: text("user_id").notNull().references(() => user.id),
+	cycleId: text("cycle_id").notNull().references(() => cycle.id),
+	memberId: text("member_id").notNull().references(() => member.id),
+	amount: real("amount").notNull(),
+	description: text("description").notNull(),
+	createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+});
+
 // ─── Relations ───────────────────────────────────────────────────────────────
 
 export const paymentMethodRelations = relations(paymentMethod, ({ many }) => ({
@@ -119,6 +139,8 @@ export const paymentMethodRelations = relations(paymentMethod, ({ many }) => ({
 
 export const memberRelations = relations(member, ({ many }) => ({
 	splits: many(expenseSplit),
+	payments: many(memberPayment),
+	additionalCosts: many(memberAdditionalCost),
 }));
 
 export const categoryRelations = relations(category, ({ many }) => ({
@@ -127,6 +149,8 @@ export const categoryRelations = relations(category, ({ many }) => ({
 
 export const cycleRelations = relations(cycle, ({ many }) => ({
 	expenses: many(expense),
+	memberPayments: many(memberPayment),
+	memberAdditionalCosts: many(memberAdditionalCost),
 }));
 
 export const expenseRelations = relations(expense, ({ one, many }) => ({
@@ -153,5 +177,27 @@ export const expenseSplitRelations = relations(expenseSplit, ({ one }) => ({
 	member: one(member, {
 		fields: [expenseSplit.memberId],
 		references: [member.id],
+	}),
+}));
+
+export const memberPaymentRelations = relations(memberPayment, ({ one }) => ({
+	member: one(member, {
+		fields: [memberPayment.memberId],
+		references: [member.id],
+	}),
+	cycle: one(cycle, {
+		fields: [memberPayment.cycleId],
+		references: [cycle.id],
+	}),
+}));
+
+export const memberAdditionalCostRelations = relations(memberAdditionalCost, ({ one }) => ({
+	member: one(member, {
+		fields: [memberAdditionalCost.memberId],
+		references: [member.id],
+	}),
+	cycle: one(cycle, {
+		fields: [memberAdditionalCost.cycleId],
+		references: [cycle.id],
 	}),
 }));

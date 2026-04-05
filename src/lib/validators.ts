@@ -90,6 +90,22 @@ export const updateExpenseSchema = z.object({
   splits: z.array(expenseSplitSchema).optional(),
 });
 
+// ─── Financials ──────────────────────────────────────────────────────────────
+
+export const createMemberPaymentSchema = z.object({
+  cycleId: z.string().min(1, "Cycle is required"),
+  memberId: z.string().min(1, "Member is required"),
+  amount: z.number().positive("Amount must be positive"),
+  note: z.string().max(500).optional().nullable(),
+});
+
+export const createMemberAdditionalCostSchema = z.object({
+  cycleId: z.string().min(1, "Cycle is required"),
+  memberId: z.string().min(1, "Member is required"),
+  amount: z.number().positive("Amount must be positive"),
+  description: z.string().min(1, "Description is required").max(500),
+});
+
 // ─── Type Exports ────────────────────────────────────────────────────────────
 
 export type CreatePaymentMethod = z.infer<typeof createPaymentMethodSchema>;
@@ -103,3 +119,5 @@ export type UpdateCycle = z.infer<typeof updateCycleSchema>;
 export type CreateExpense = z.infer<typeof createExpenseSchema>;
 export type UpdateExpense = z.infer<typeof updateExpenseSchema>;
 export type ExpenseSplitInput = z.infer<typeof expenseSplitSchema>;
+export type CreateMemberPayment = z.infer<typeof createMemberPaymentSchema>;
+export type CreateMemberAdditionalCost = z.infer<typeof createMemberAdditionalCostSchema>;

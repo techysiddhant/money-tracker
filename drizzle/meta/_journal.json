@@ -15,6 +15,13 @@
       "when": 1775291991223,
       "tag": "0001_polite_lake",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1775377406449,
+      "tag": "0002_clumsy_dreadnoughts",
+      "breakpoints": true
     }
   ]
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -10,6 +11,7 @@ import {
   Users,
   CreditCard,
   LogOut,
+  BarChart3,
 } from "lucide-react";
 import {
   Sidebar,
@@ -42,6 +44,11 @@ const navItems = [
     title: "Cycles",
     href: "/cycles",
     icon: RefreshCw,
+  },
+  {
+    title: "Financials",
+    href: "/financials",
+    icon: BarChart3,
   },
   {
     title: "Categories",
@@ -78,10 +85,14 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border px-6 py-4 standalone:pt-[calc(1rem+env(safe-area-inset-top))]">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Receipt className="h-4 w-4" />
-          </div>
-          <span className="font-heading text-lg font-bold">Money Tracker</span>
+          <Image
+            src="/logo.png"
+            alt="TrackMint"
+            width={32}
+            height={32}
+            className="rounded-lg"
+          />
+          <span className="font-heading text-lg font-bold">TrackMint</span>
         </Link>
       </SidebarHeader>
 

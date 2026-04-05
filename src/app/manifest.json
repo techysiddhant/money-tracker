@@ -1,6 +1,6 @@
 {
-  "name": "Track Mint",
-  "short_name": "Track",
+  "name": "TrackMint",
+  "short_name": "TrackMint",
   "icons": [
     {
       "src": "/web-app-manifest-192x192.png",

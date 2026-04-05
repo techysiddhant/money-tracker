@@ -30,15 +30,16 @@ export interface ExpenseData {
   splits?: ExpenseSplitData[];
 }
 
-export function useExpenses(
-  page = 1,
-  limit = 10,
-  filters?: {
-    cycleId?: string;
-    categoryId?: string;
-    paymentMethodId?: string;
-  }
-) {
+export interface ExpenseFilters {
+  cycleId?: string;
+  categoryId?: string;
+  paymentMethodId?: string;
+  memberId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export function useExpenses(page = 1, limit = 10, filters?: ExpenseFilters) {
   const params = new URLSearchParams({
     page: String(page),
     limit: String(limit),
@@ -47,6 +48,9 @@ export function useExpenses(
   if (filters?.categoryId) params.set("categoryId", filters.categoryId);
   if (filters?.paymentMethodId)
     params.set("paymentMethodId", filters.paymentMethodId);
+  if (filters?.memberId) params.set("memberId", filters.memberId);
+  if (filters?.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters?.dateTo) params.set("dateTo", filters.dateTo);
 
   return useQuery({
     queryKey: ["expenses", page, limit, filters],

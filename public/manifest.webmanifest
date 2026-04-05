@@ -1,6 +1,6 @@
 {
-  "name": "Track Mint",
-  "short_name": "Track",
+  "name": "TrackMint",
+  "short_name": "TrackMint",
   "description": "",
   "display": "standalone",
   "start_url": "/",
