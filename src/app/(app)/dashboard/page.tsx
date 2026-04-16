@@ -103,7 +103,7 @@ export default function DashboardPage() {
             Overview of your expense tracking
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 ">
           <Button asChild size="sm" className="gap-1.5 h-10">
             <Link href="/expenses/new">
               <Plus className="h-4 w-4" />
@@ -118,7 +118,7 @@ export default function DashboardPage() {
             value={cycleId || "all"}
             onChange={(v) => setCycleId(v === "all" ? undefined : v)}
             placeholder="All Cycles"
-            className="w-full sm:w-[200px]"
+            className="w-[180px]"
           />
         </div>
       </div>
@@ -127,30 +127,30 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => (
-              <Card key={i}>
-                <CardContent className="p-6">
-                  <Skeleton className="h-4 w-24 mb-3" />
-                  <Skeleton className="h-8 w-32" />
-                </CardContent>
-              </Card>
-            ))
+            <Card key={i} className="p-0">
+              <CardContent className="p-6">
+                <Skeleton className="h-4 w-24 mb-3" />
+                <Skeleton className="h-8 w-32" />
+              </CardContent>
+            </Card>
+          ))
           : kpiCards.map((kpi) => (
-              <Card key={kpi.title} className="relative overflow-hidden">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {kpi.title}
-                    </p>
-                    <div className={`${kpi.bg} ${kpi.color} rounded-lg p-2`}>
-                      <kpi.icon className="h-4 w-4" />
-                    </div>
-                  </div>
-                  <p className="mt-2 text-2xl font-bold tracking-tight font-mono">
-                    {kpi.value}
+            <Card key={kpi.title} className="relative overflow-hidden p-0">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium text-muted-foreground">
+                    {kpi.title}
                   </p>
-                </CardContent>
-              </Card>
-            ))}
+                  <div className={`${kpi.bg} ${kpi.color} rounded-lg p-2`}>
+                    <kpi.icon className="h-4 w-4" />
+                  </div>
+                </div>
+                <p className="mt-2 text-2xl font-bold tracking-tight font-mono">
+                  {kpi.value}
+                </p>
+              </CardContent>
+            </Card>
+          ))}
       </div>
 
       {/* Charts Row */}

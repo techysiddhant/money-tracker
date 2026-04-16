@@ -86,7 +86,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border px-6 py-4 standalone:pt-[calc(1rem+env(safe-area-inset-top))]">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image
-            src="/logo.png"
+            src="/logo-icon.png"
             alt="TrackMint"
             width={32}
             height={32}
