@@ -10,7 +10,23 @@ const withPWA = withPWAInit({
 });
 
 const nextConfig = {
-	/* config options here */
+	webpack: (config, { isServer }) => {
+		// Suppress warnings about these packages being externalized or missing
+		config.ignoreWarnings = [
+			{ module: /node_modules\/@vercel\/og/ },
+		];
+		
+		// Map unused heavy dependencies to false so they are pruned from the bundle
+		config.resolve.alias = {
+			...config.resolve.alias,
+			"@vercel/og": false,
+		};
+		return config;
+	},
+	experimental: {
+		// Additional safety to prevent bundling it server-side if it leaks
+		serverExternalPackages: ["@vercel/og"],
+	},
 };
 
 export default withPWA(nextConfig);

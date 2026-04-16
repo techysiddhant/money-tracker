@@ -35,7 +35,8 @@
 	"observability": {
 		"enabled": true
 	},
-	"upload_source_maps": true,
+	"minify": true,
+	"upload_source_maps": false,
 	"d1_databases": [
 		{
 			"binding": "DB",

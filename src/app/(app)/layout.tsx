@@ -37,13 +37,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <header className="sticky top-0 z-50 flex h-14 standalone:h-[calc(3.5rem+env(safe-area-inset-top))] standalone:pt-[env(safe-area-inset-top)] shrink-0 items-center gap-2 border-b bg-background px-4">
+        <header className="sticky top-0 z-50 flex h-[calc(3.5rem+env(safe-area-inset-top))] pt-[env(safe-area-inset-top)] shrink-0 items-center gap-2 border-b bg-background px-4">
           <SidebarTrigger className="-ml-1" />
           <Separator orientation="vertical" className="mr-2 h-4" />
           <div className="flex-1" />
           <ThemeToggle />
         </header>
-        <main className="flex-1 overflow-auto p-4 md:p-6 standalone:pb-[env(safe-area-inset-bottom)]">
+        <main className="flex-1 overflow-auto p-4 md:p-6 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           {children}
         </main>
       </SidebarInset>

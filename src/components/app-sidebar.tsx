@@ -83,7 +83,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border px-6 py-4 standalone:pt-[calc(1rem+env(safe-area-inset-top))]">
+      <SidebarHeader className="border-b border-sidebar-border px-6 py-4 pt-[calc(1rem+env(safe-area-inset-top))]">
         <Link href="/dashboard" className="flex items-center gap-2">
           <Image
             src="/logo-icon.png"
