@@ -36,6 +36,10 @@ export interface DashboardData {
     categoryIcon: string | null;
     paymentMethodName: string | null;
   }>;
+  timelineSpending: Array<{
+    date: string;
+    total: number;
+  }>;
 }
 
 export function useDashboard(cycleId?: string) {
