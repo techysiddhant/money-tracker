@@ -336,14 +336,14 @@ export function ExpenseForm({ mode, defaultValues, onSubmit, isPending }: Expens
       </Card>
 
       {/* Actions */}
-      <div className="flex items-center justify-end gap-3 pb-8">
-        <Button variant="outline" asChild>
+      <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 pb-8">
+        <Button variant="outline" asChild className="w-full sm:w-auto">
           <Link href="/expenses">Cancel</Link>
         </Button>
         <Button
           onClick={() => form.handleSubmit()}
           disabled={isPending}
-          className="min-w-[120px]"
+          className="w-full sm:w-auto sm:min-w-[120px]"
         >
           {isPending
             ? mode === "create"
@@ -383,48 +383,46 @@ function SplitRowItem({
           : "border-dashed"
       }`}
     >
-      <div className="flex-1 space-y-2 sm:space-y-0 sm:flex sm:gap-3">
-        <Combobox
-          options={members
-            .filter(
-              (m) =>
-                m.id === split.memberId ||
-                !allSplits.find(
-                  (s) => s.memberId === m.id && s.tempId !== split.tempId
-                )
-            )
-            .map((m) => ({ label: m.name, value: m.id }))}
-          value={split.memberId}
-          onChange={(v) => onUpdate(split.tempId, "memberId", v)}
-          placeholder="Select member"
-          className="sm:w-[180px]"
-        />
+      <div className="flex-1 grid grid-cols-1 sm:flex gap-3">
+        <div className="w-full sm:w-[180px] shrink-0">
+          <Combobox
+            options={members
+              .filter(
+                (m) =>
+                  m.id === split.memberId ||
+                  !allSplits.find(
+                    (s) => s.memberId === m.id && s.tempId !== split.tempId
+                  )
+              )
+              .map((m) => ({ label: m.name, value: m.id }))}
+            value={split.memberId}
+            onChange={(v) => onUpdate(split.tempId, "memberId", v)}
+            placeholder="Select member"
+            className="w-full"
+          />
+        </div>
 
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Amount"
-              value={split.amount || ""}
-              onChange={(e) =>
-                onUpdate(split.tempId, "amount", parseFloat(e.target.value) || 0)
-              }
-            />
-          </div>
-          <div className="flex-1">
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="Received"
-              value={split.received || ""}
-              onChange={(e) =>
-                onUpdate(split.tempId, "received", parseFloat(e.target.value) || 0)
-              }
-            />
-          </div>
+        <div className="grid grid-cols-2 gap-3 flex-1">
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="Amount"
+            value={split.amount || ""}
+            onChange={(e) =>
+              onUpdate(split.tempId, "amount", parseFloat(e.target.value) || 0)
+            }
+          />
+          <Input
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="Received"
+            value={split.received || ""}
+            onChange={(e) =>
+              onUpdate(split.tempId, "received", parseFloat(e.target.value) || 0)
+            }
+          />
         </div>
       </div>
 

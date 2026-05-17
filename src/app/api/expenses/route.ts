@@ -92,12 +92,19 @@ export async function GET(request: NextRequest) {
   let splitCounts: Record<string, number> = {};
 
   if (expenseIds.length > 0) {
-    for (const eid of expenseIds) {
-      const [{ total: splitCount }] = await db
-        .select({ total: count() })
-        .from(expenseSplit)
-        .where(eq(expenseSplit.expenseId, eid));
-      splitCounts[eid] = splitCount;
+    const splitCountsResult = await db
+      .select({
+        expenseId: expenseSplit.expenseId,
+        total: count(),
+      })
+      .from(expenseSplit)
+      .where(inArray(expenseSplit.expenseId, expenseIds))
+      .groupBy(expenseSplit.expenseId);
+
+    for (const row of splitCountsResult) {
+      if (row.expenseId) {
+        splitCounts[row.expenseId] = row.total;
+      }
     }
   }
 

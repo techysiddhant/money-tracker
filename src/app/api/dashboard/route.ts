@@ -13,7 +13,7 @@ import {
   apiError,
   apiResponse,
 } from "@/lib/api-utils";
-import { eq, and, sum, count, desc } from "drizzle-orm";
+import { eq, and, sum, count, desc, inArray } from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
   const user = await getAuthenticatedUser(request);
@@ -39,28 +39,61 @@ export async function GET(request: NextRequest) {
     .from(expense)
     .where(whereClause);
 
-  // Total received amount (across all splits for the user's expenses)
-  const expenseIds = await db
+  // Total received amount & Member Spending (bulk query instead of N+1)
+  const expensesQuery = await db
     .select({ id: expense.id })
     .from(expense)
     .where(whereClause);
 
+  const expenseIds = expensesQuery.map((e) => e.id);
+
   let totalReceived = 0;
   let totalSplitAmount = 0;
+  let memberSpending: Array<{
+    memberId: string;
+    memberName: string | null;
+    totalAmount: number;
+    totalReceived: number;
+  }> = [];
 
   if (expenseIds.length > 0) {
-    for (const { id } of expenseIds) {
-      const [splitTotals] = await db
-        .select({
-          totalAmount: sum(expenseSplit.amount),
-          totalReceived: sum(expenseSplit.received),
-        })
-        .from(expenseSplit)
-        .where(eq(expenseSplit.expenseId, id));
+    const allSplits = await db
+      .select({
+        memberId: expenseSplit.memberId,
+        memberName: member.name,
+        amount: expenseSplit.amount,
+        received: expenseSplit.received,
+      })
+      .from(expenseSplit)
+      .leftJoin(member, eq(expenseSplit.memberId, member.id))
+      .where(inArray(expenseSplit.expenseId, expenseIds));
 
-      totalSplitAmount += Number(splitTotals?.totalAmount || 0);
-      totalReceived += Number(splitTotals?.totalReceived || 0);
+    // Aggregate by member and total
+    const memberMap = new Map<
+      string,
+      { memberName: string | null; totalAmount: number; totalReceived: number }
+    >();
+
+    for (const split of allSplits) {
+      totalSplitAmount += Number(split.amount || 0);
+      totalReceived += Number(split.received || 0);
+
+      if (split.memberId) {
+        const existing = memberMap.get(split.memberId) || {
+          memberName: split.memberName,
+          totalAmount: 0,
+          totalReceived: 0,
+        };
+        existing.totalAmount += Number(split.amount || 0);
+        existing.totalReceived += Number(split.received || 0);
+        memberMap.set(split.memberId, existing);
+      }
     }
+
+    memberSpending = Array.from(memberMap.entries()).map(([memberId, data]) => ({
+      memberId,
+      ...data,
+    }));
   }
 
   // Spending by category
@@ -76,52 +109,6 @@ export async function GET(request: NextRequest) {
     .leftJoin(category, eq(expense.categoryId, category.id))
     .where(whereClause)
     .groupBy(expense.categoryId, category.name, category.icon);
-
-  // Spending by member (from splits)
-  let memberSpending: Array<{
-    memberId: string;
-    memberName: string | null;
-    totalAmount: number;
-    totalReceived: number;
-  }> = [];
-
-  if (expenseIds.length > 0) {
-    const allSplits = [];
-    for (const { id } of expenseIds) {
-      const splits = await db
-        .select({
-          memberId: expenseSplit.memberId,
-          memberName: member.name,
-          amount: expenseSplit.amount,
-          received: expenseSplit.received,
-        })
-        .from(expenseSplit)
-        .leftJoin(member, eq(expenseSplit.memberId, member.id))
-        .where(eq(expenseSplit.expenseId, id));
-      allSplits.push(...splits);
-    }
-
-    // Aggregate by member
-    const memberMap = new Map<
-      string,
-      { memberName: string | null; totalAmount: number; totalReceived: number }
-    >();
-    for (const s of allSplits) {
-      const existing = memberMap.get(s.memberId) || {
-        memberName: s.memberName,
-        totalAmount: 0,
-        totalReceived: 0,
-      };
-      existing.totalAmount += s.amount;
-      existing.totalReceived += s.received;
-      memberMap.set(s.memberId, existing);
-    }
-
-    memberSpending = Array.from(memberMap.entries()).map(([memberId, data]) => ({
-      memberId,
-      ...data,
-    }));
-  }
 
   // Spending by payment method
   const paymentMethodSpending = await db
@@ -159,6 +146,17 @@ export async function GET(request: NextRequest) {
     .orderBy(desc(expense.date), desc(expense.createdAt))
     .limit(5);
 
+  // Spending timeline by date
+  const timelineSpending = await db
+    .select({
+      date: expense.date,
+      total: sum(expense.amount),
+    })
+    .from(expense)
+    .where(whereClause)
+    .groupBy(expense.date)
+    .orderBy(expense.date);
+
   return apiResponse({
     totalExpenses: Number(totalResult?.total || 0),
     transactionCount: countResult?.total || 0,
@@ -173,6 +171,10 @@ export async function GET(request: NextRequest) {
     paymentMethodSpending: paymentMethodSpending.map((p) => ({
       ...p,
       total: Number(p.total || 0),
+    })),
+    timelineSpending: timelineSpending.map((t) => ({
+      date: t.date,
+      total: Number(t.total || 0),
     })),
     recentExpenses,
   });

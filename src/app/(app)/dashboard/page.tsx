@@ -24,6 +24,8 @@ import {
   Cell,
   BarChart,
   Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -90,6 +92,16 @@ export default function DashboardPage() {
     amount: m.totalAmount,
     received: m.totalReceived,
     pending: m.totalAmount - m.totalReceived,
+  }));
+
+  const paymentMethodChartData = (data?.paymentMethodSpending || []).map((p) => ({
+    name: p.paymentMethodName || "Unknown",
+    value: p.total,
+  }));
+
+  const timelineChartData = (data?.timelineSpending || []).map((t) => ({
+    date: formatDate(t.date),
+    total: t.total,
   }));
 
   return (
@@ -255,6 +267,113 @@ export default function DashboardPage() {
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Payment Method Spending Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Spending by Payment Method</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[300px] w-full" />
+            ) : paymentMethodChartData.length === 0 ? (
+              <div className="flex items-center justify-center h-[300px] text-sm text-muted-foreground">
+                No payment method data yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={paymentMethodChartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={4}
+                    dataKey="value"
+                    nameKey="name"
+                    stroke="none"
+                  >
+                    {paymentMethodChartData.map((_, index) => (
+                      <Cell
+                        key={`pm-cell-${index}`}
+                        fill={CHART_COLORS[(index + 3) % CHART_COLORS.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <RechartsTooltip
+                    formatter={(value) => formatCurrency(Number(value))}
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "var(--radius)",
+                      color: "hsl(var(--foreground))",
+                    }}
+                  />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Timeline Spending Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Spending Timeline</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <Skeleton className="h-[300px] w-full" />
+            ) : timelineChartData.length === 0 ? (
+              <div className="flex items-center justify-center h-[300px] text-sm text-muted-foreground">
+                No timeline data yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <AreaChart data={timelineChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="hsl(252, 87%, 64%)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="hsl(252, 87%, 64%)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-border" vertical={false} />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12 }} 
+                    className="fill-muted-foreground"
+                    tickMargin={10} 
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12 }} 
+                    className="fill-muted-foreground"
+                    tickFormatter={(v) => `₹${v}`}
+                    width={60} 
+                  />
+                  <RechartsTooltip
+                    formatter={(value) => formatCurrency(Number(value))}
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "var(--radius)",
+                      color: "hsl(var(--foreground))",
+                    }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="total"
+                    name="Daily Spend"
+                    stroke="hsl(252, 87%, 64%)"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#colorTotal)"
+                  />
+                </AreaChart>
               </ResponsiveContainer>
             )}
           </CardContent>
