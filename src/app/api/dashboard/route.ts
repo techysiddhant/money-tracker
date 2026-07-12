@@ -6,176 +6,234 @@ import {
   category,
   member,
   paymentMethod,
-  cycle,
 } from "@/lib/schema";
 import {
   getAuthenticatedUser,
   apiError,
   apiResponse,
 } from "@/lib/api-utils";
-import { eq, and, sum, count, desc, inArray } from "drizzle-orm";
+import {
+  eq,
+  and,
+  sum,
+  count,
+  desc,
+} from "drizzle-orm";
 
 export async function GET(request: NextRequest) {
-  const user = await getAuthenticatedUser(request);
-  if (!user) return apiError("Unauthorized", 401);
+  try {
+    const user = await getAuthenticatedUser(request);
 
-  const url = new URL(request.url);
-  const cycleId = url.searchParams.get("cycleId");
-  const db = getDb();
-
-  const conditions = [eq(expense.userId, user.id)];
-  if (cycleId) conditions.push(eq(expense.cycleId, cycleId));
-  const whereClause = and(...conditions);
-
-  // Total expenses amount
-  const [totalResult] = await db
-    .select({ total: sum(expense.amount) })
-    .from(expense)
-    .where(whereClause);
-
-  // Transaction count
-  const [countResult] = await db
-    .select({ total: count() })
-    .from(expense)
-    .where(whereClause);
-
-  // Total received amount & Member Spending (bulk query instead of N+1)
-  const expensesQuery = await db
-    .select({ id: expense.id })
-    .from(expense)
-    .where(whereClause);
-
-  const expenseIds = expensesQuery.map((e) => e.id);
-
-  let totalReceived = 0;
-  let totalSplitAmount = 0;
-  let memberSpending: Array<{
-    memberId: string;
-    memberName: string | null;
-    totalAmount: number;
-    totalReceived: number;
-  }> = [];
-
-  if (expenseIds.length > 0) {
-    const allSplits = await db
-      .select({
-        memberId: expenseSplit.memberId,
-        memberName: member.name,
-        amount: expenseSplit.amount,
-        received: expenseSplit.received,
-      })
-      .from(expenseSplit)
-      .leftJoin(member, eq(expenseSplit.memberId, member.id))
-      .where(inArray(expenseSplit.expenseId, expenseIds));
-
-    // Aggregate by member and total
-    const memberMap = new Map<
-      string,
-      { memberName: string | null; totalAmount: number; totalReceived: number }
-    >();
-
-    for (const split of allSplits) {
-      totalSplitAmount += Number(split.amount || 0);
-      totalReceived += Number(split.received || 0);
-
-      if (split.memberId) {
-        const existing = memberMap.get(split.memberId) || {
-          memberName: split.memberName,
-          totalAmount: 0,
-          totalReceived: 0,
-        };
-        existing.totalAmount += Number(split.amount || 0);
-        existing.totalReceived += Number(split.received || 0);
-        memberMap.set(split.memberId, existing);
-      }
+    if (!user) {
+      return apiError("Unauthorized", 401);
     }
 
-    memberSpending = Array.from(memberMap.entries()).map(([memberId, data]) => ({
-      memberId,
-      ...data,
-    }));
-  }
+    const db = getDb();
 
-  // Spending by category
-  const categorySpending = await db
-    .select({
-      categoryId: expense.categoryId,
-      categoryName: category.name,
-      categoryIcon: category.icon,
-      total: sum(expense.amount),
-      count: count(),
-    })
-    .from(expense)
-    .leftJoin(category, eq(expense.categoryId, category.id))
-    .where(whereClause)
-    .groupBy(expense.categoryId, category.name, category.icon);
+    const { searchParams } = new URL(request.url);
+    const cycleId = searchParams.get("cycleId");
 
-  // Spending by payment method
-  const paymentMethodSpending = await db
-    .select({
-      paymentMethodId: expense.paymentMethodId,
-      paymentMethodName: paymentMethod.name,
-      paymentMethodType: paymentMethod.type,
-      total: sum(expense.amount),
-      count: count(),
-    })
-    .from(expense)
-    .leftJoin(paymentMethod, eq(expense.paymentMethodId, paymentMethod.id))
-    .where(whereClause)
-    .groupBy(
-      expense.paymentMethodId,
-      paymentMethod.name,
-      paymentMethod.type
+    const conditions = [eq(expense.userId, user.id)];
+
+    if (cycleId) {
+      conditions.push(eq(expense.cycleId, cycleId));
+    }
+
+    const whereClause = and(...conditions);
+
+    const [
+      totalResult,
+      countResult,
+      splitRows,
+      categoryRows,
+      paymentRows,
+      timelineRows,
+      recentExpenses,
+    ] = await Promise.all([
+      db
+        .select({
+          total: sum(expense.amount),
+        })
+        .from(expense)
+        .where(whereClause),
+
+      db
+        .select({
+          total: count(),
+        })
+        .from(expense)
+        .where(whereClause),
+
+      db
+        .select({
+          memberId: expenseSplit.memberId,
+          memberName: member.name,
+          amount: expenseSplit.amount,
+          received: expenseSplit.received,
+        })
+        .from(expenseSplit)
+        .innerJoin(
+          expense,
+          eq(expenseSplit.expenseId, expense.id)
+        )
+        .leftJoin(
+          member,
+          eq(expenseSplit.memberId, member.id)
+        )
+        .where(whereClause),
+
+      db
+        .select({
+          categoryId: expense.categoryId,
+          categoryName: category.name,
+          categoryIcon: category.icon,
+          total: sum(expense.amount),
+          count: count(),
+        })
+        .from(expense)
+        .leftJoin(
+          category,
+          eq(expense.categoryId, category.id)
+        )
+        .where(whereClause)
+        .groupBy(
+          expense.categoryId,
+          category.name,
+          category.icon
+        ),
+
+      db
+        .select({
+          paymentMethodId: expense.paymentMethodId,
+          paymentMethodName: paymentMethod.name,
+          paymentMethodType: paymentMethod.type,
+          total: sum(expense.amount),
+          count: count(),
+        })
+        .from(expense)
+        .leftJoin(
+          paymentMethod,
+          eq(expense.paymentMethodId, paymentMethod.id)
+        )
+        .where(whereClause)
+        .groupBy(
+          expense.paymentMethodId,
+          paymentMethod.name,
+          paymentMethod.type
+        ),
+
+      db
+        .select({
+          date: expense.date,
+          total: sum(expense.amount),
+        })
+        .from(expense)
+        .where(whereClause)
+        .groupBy(expense.date)
+        .orderBy(expense.date),
+
+      db
+        .select({
+          id: expense.id,
+          title: expense.title,
+          amount: expense.amount,
+          date: expense.date,
+          categoryName: category.name,
+          categoryIcon: category.icon,
+          paymentMethodName: paymentMethod.name,
+        })
+        .from(expense)
+        .leftJoin(
+          category,
+          eq(expense.categoryId, category.id)
+        )
+        .leftJoin(
+          paymentMethod,
+          eq(expense.paymentMethodId, paymentMethod.id)
+        )
+        .where(whereClause)
+        .orderBy(
+          desc(expense.date),
+          desc(expense.createdAt)
+        )
+        .limit(5),
+    ]);
+
+    let totalSplitAmount = 0;
+    let totalReceived = 0;
+
+    const memberMap = new Map<
+      string,
+      {
+        memberName: string | null;
+        totalAmount: number;
+        totalReceived: number;
+      }
+    >();
+
+    for (const row of splitRows) {
+      const amount = Number(row.amount ?? 0);
+      const received = Number(row.received ?? 0);
+
+      totalSplitAmount += amount;
+      totalReceived += received;
+
+      if (!row.memberId) continue;
+
+      const existing = memberMap.get(row.memberId) ?? {
+        memberName: row.memberName,
+        totalAmount: 0,
+        totalReceived: 0,
+      };
+
+      existing.totalAmount += amount;
+      existing.totalReceived += received;
+
+      memberMap.set(row.memberId, existing);
+    }
+
+    const memberSpending = Array.from(memberMap.entries()).map(
+      ([memberId, value]) => ({
+        memberId,
+        ...value,
+      })
     );
 
-  // Recent expenses (last 5)
-  const recentExpenses = await db
-    .select({
-      id: expense.id,
-      title: expense.title,
-      amount: expense.amount,
-      date: expense.date,
-      categoryName: category.name,
-      categoryIcon: category.icon,
-      paymentMethodName: paymentMethod.name,
-    })
-    .from(expense)
-    .leftJoin(category, eq(expense.categoryId, category.id))
-    .leftJoin(paymentMethod, eq(expense.paymentMethodId, paymentMethod.id))
-    .where(whereClause)
-    .orderBy(desc(expense.date), desc(expense.createdAt))
-    .limit(5);
+    return apiResponse({
+      totalExpenses: Number(totalResult[0]?.total ?? 0),
+      transactionCount: Number(countResult[0]?.total ?? 0),
 
-  // Spending timeline by date
-  const timelineSpending = await db
-    .select({
-      date: expense.date,
-      total: sum(expense.amount),
-    })
-    .from(expense)
-    .where(whereClause)
-    .groupBy(expense.date)
-    .orderBy(expense.date);
+      totalSplitAmount,
+      totalReceived,
+      pendingAmount: totalSplitAmount - totalReceived,
 
-  return apiResponse({
-    totalExpenses: Number(totalResult?.total || 0),
-    transactionCount: countResult?.total || 0,
-    totalSplitAmount,
-    totalReceived,
-    pendingAmount: totalSplitAmount - totalReceived,
-    categorySpending: categorySpending.map((c) => ({
-      ...c,
-      total: Number(c.total || 0),
-    })),
-    memberSpending,
-    paymentMethodSpending: paymentMethodSpending.map((p) => ({
-      ...p,
-      total: Number(p.total || 0),
-    })),
-    timelineSpending: timelineSpending.map((t) => ({
-      date: t.date,
-      total: Number(t.total || 0),
-    })),
-    recentExpenses,
-  });
+      memberSpending,
+
+      categorySpending: categoryRows.map((row) => ({
+        ...row,
+        total: Number(row.total ?? 0),
+      })),
+
+      paymentMethodSpending: paymentRows.map((row) => ({
+        ...row,
+        total: Number(row.total ?? 0),
+      })),
+
+      timelineSpending: timelineRows.map((row) => ({
+        date: row.date,
+        total: Number(row.total ?? 0),
+      })),
+
+      recentExpenses,
+    });
+  } catch (error) {
+    console.error("Dashboard API Error");
+    console.error(error);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    console.error((error as any)?.cause);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    console.error((error as any)?.stack);
+
+    return apiError("Failed to fetch dashboard data", 500);
+  }
 }
